@@ -1,0 +1,14 @@
+#
+# gridID 1
+#
+gridtype  = generic
+gridsize  = 17796444
+xsize     = 6434
+ysize     = 2766
+xname     = x
+yname     = y
+xfirst    = -124.735568776416
+xinc      = 0.00898315284119522
+yfirst    = 49.3848827444707
+yinc      = -0.00898315284119522
+scanningMode = 64

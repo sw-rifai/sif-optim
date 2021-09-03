@@ -1,0 +1,14 @@
+20210824 111349.917 ERROR            PET0 ESMF_LocalArrayCreate.F90:12251 ESMF_LocalArrConstrF90Ptr Unable to allocate memory  - LocalArray data space (status = 5014)
+20210824 111349.917 ERROR            PET0 ESMF_ArrayCreate.F90:26863 ESMF_ArrayCreateAllocateAS() Unable to allocate memory  - Internal subroutine call returned Error
+20210824 111349.917 ERROR            PET0 ESMF_FieldEmpty.F90:1854 ESMF_FieldConstructIANew Unable to allocate memory  - Internal subroutine call returned Error
+20210824 111349.917 ERROR            PET0 ESMF_FieldCreate.F90:1239 ESMF_FieldCreateGBArraySpec Unable to allocate memory  - Internal subroutine call returned Error
+20210824 111349.917 ERROR            PET0 ESMF_FieldCreate.F90:7045 ESMF_FieldCreateGridArraySpec Unable to allocate memory  - Internal subroutine call returned Error
+20210824 111349.917 ERROR            PET0 ESMF_FieldCreate.F90:6855 ESMF_FieldCreateGridTKR Unable to allocate memory  - Internal subroutine call returned Error
+20210824 111349.917 ERROR            PET0 ESMF_Field_C.F90:193 f_esmf_fieldcreategridtk Unable to allocate memory  - Internal subroutine call returned Error
+20210824 111508.264 ERROR            PET0 ESMF_LocalArrayCreate.F90:12251 ESMF_LocalArrConstrF90Ptr Unable to allocate memory  - LocalArray data space (status = 5014)
+20210824 111508.264 ERROR            PET0 ESMF_ArrayCreate.F90:26863 ESMF_ArrayCreateAllocateAS() Unable to allocate memory  - Internal subroutine call returned Error
+20210824 111508.264 ERROR            PET0 ESMF_FieldEmpty.F90:1854 ESMF_FieldConstructIANew Unable to allocate memory  - Internal subroutine call returned Error
+20210824 111508.264 ERROR            PET0 ESMF_FieldCreate.F90:1239 ESMF_FieldCreateGBArraySpec Unable to allocate memory  - Internal subroutine call returned Error
+20210824 111508.264 ERROR            PET0 ESMF_FieldCreate.F90:7045 ESMF_FieldCreateGridArraySpec Unable to allocate memory  - Internal subroutine call returned Error
+20210824 111508.264 ERROR            PET0 ESMF_FieldCreate.F90:6855 ESMF_FieldCreateGridTKR Unable to allocate memory  - Internal subroutine call returned Error
+20210824 111508.264 ERROR            PET0 ESMF_Field_C.F90:193 f_esmf_fieldcreategridtk Unable to allocate memory  - Internal subroutine call returned Error

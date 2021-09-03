@@ -1,0 +1,1 @@
+cdo -f nc4c -z zip_6 cat /media/sami/srifai-ssd/data-ssd/tropomi-conus/TROPOMI_201802* test.nc
