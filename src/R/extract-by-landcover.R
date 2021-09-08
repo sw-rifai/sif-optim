@@ -13,7 +13,7 @@ pacman::p_load(tictoc, tidyverse,
   stars)
 
 # OPTIONS ---------------------------------------------------------
-lc_class <- 43 # see below for descrip of lc classes
+lc_class <- 41 # see below for descrip of lc classes
 redo <- TRUE # do all the chunks need to be reprocessed?
 
 # US National LC class description ---------------------------------
@@ -134,7 +134,7 @@ for(idx in 1:dim(dseq)[1]){
   gc(full=T)
   rm(s); gc()
   d_s <- rbindlist(d_s)
-  
+  print(paste("done: sif"))
   
   # Extract LST -------------------------------------------------------------
   gc(full=T)
@@ -175,6 +175,8 @@ for(idx in 1:dim(dseq)[1]){
   gc(full=T)
   setkeyv(d_m,cols = c("x","y","date"))
   gc(full=T)
+
+  print(paste("done: lst"))
   
   dat <- merge(d_s, d_m, all.x = T,all.y=F)
   gc(full=T)
@@ -189,26 +191,55 @@ for(idx in 1:dim(dseq)[1]){
   gc(full=T)
   p <- stars::read_stars(flist_p[1],proxy=F) %>% set_names("pdsi")
   gc(full=T)
-  p <- p %>% st_set_dimensions(.,3,values=fn_get_pdsi_dates(flist_p[1]),names = 'date')
+  p <- p %>% st_set_dimensions(.,3,
+    values=fn_get_pdsi_dates(flist_p[1]),names = 'date')
   gc(full=T)
 
   n_bands <- dim(p)[3]
   p <- st_warp(p,m[,,,1:n_bands],use_gdal = F)
   p <- st_as_stars(p)
-  rm(m)
+
+  # tests ***  
+  st_get_dimension_values(p,1) %in% 
+    st_get_dimension_values(m,1) %>% 
+    table()
+  st_get_dimension_values(p,2) %in% 
+    st_get_dimension_values(m,2) %>% 
+    table()
+  
   gc(full=T)
   # p <- st_crop(p,roi,epsilon = 0.999)
   d_p <- p %>% as.data.table()
+  
+  # tests ***
+  print(idx)
+  unique(d_p$x) %in% st_get_dimension_values(p,1) %>% 
+    table()
+  unique(d_p$y) %in% st_get_dimension_values(m,2) %>% 
+    table()
+  unique(d_p$y) %in% unique(dat$y) %>% 
+    table()
+
+  rm(m)
+  
   setkeyv(d_p,cols=c("x","y","date"))
   gc(full=T)
 
+  print(paste("done: pdsi"))
+
+  print(paste("LOOK FOR THE TESTS"))
+
   dat <- d_p[dat,roll=T]
   
+  # tests ***
+  
+  print(paste("n missing pdsi", sum(is.na(dat$pdsi))))
 
   (fname_out <- paste0("lc-",lc_class,"_",roi_name,"sif_","lst_","1km_",i_year,"_.parquet"))
+  print(fname_out)
   arrow::write_parquet(dat,sink = paste0("../data_general/proc_sif-optim/merged_parquets/",
     fname_out),compression = 'snappy')
-  rm(dat)
+  rm(dat,d_m,d_p,d_s,p)
   gc(full=T)
 
 }

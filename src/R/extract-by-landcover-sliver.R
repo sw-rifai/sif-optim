@@ -3,7 +3,7 @@ pacman::p_load(tictoc, tidyverse,
   future,foreach, 
   stars)
 # options
-lc_class <- 90
+lc_class <- 41
 
 # 
 # // Export SIF and LST by land-cover class

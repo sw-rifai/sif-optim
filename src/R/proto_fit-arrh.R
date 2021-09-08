@@ -1,6 +1,8 @@
 pacman::p_load(tidyverse,data.table,mgcv,nls.multstart,arrow,furrr,lubridate)
 source("src/R/functions_sif.R")
 
+# options -----------------------------------------------------------------
+min_nobs <- 30
 
 # Data prep ---------------------------------------------------------------
 dat <- lapply(
@@ -14,15 +16,247 @@ dat[,`:=`(lst = lst*0.02 - 273.15,
     year=year(date))]
 g <- unique(dat[,.(xc,yc)])[,.(id=.GRP),by=.(xc,yc)]
 dat <- merge(dat,g,by=c("xc","yc"))
+dat[,`:=`(fid = factor(id))]
+dat[,`:=`(dc = case_when(pdsi <= -2 ~ "drought",
+                         pdsi > -2 & pdsi < 2 ~ "norm",
+                         pdsi >= 2 ~ "wet"))]
 
 
+nobs <- dat[,.(nobs=.N),by=.(id,dc)]
+dat <- merge(dat,nobs,by=c("id","dc"))
+dat <- dat[nobs >= min_nobs]
+
+arrow::write_parquet(dat,"../data_general/proc_sif-optim/parquet-by-lc/sif_lst_pdsi_lc41.parquet",compression = 'snappy')
 
 # furrr approach -----------------------------------------------
 vec_ids <- unique(dat$id)
-vec1 <- split(vec_ids, cut(seq_along(vec_ids), 4, labels = FALSE))[[1]]
-vec2 <- split(vec_ids, cut(seq_along(vec_ids), 4, labels = FALSE))[[2]]
-vec3 <- split(vec_ids, cut(seq_along(vec_ids), 4, labels = FALSE))[[3]]
-vec4 <- split(vec_ids, cut(seq_along(vec_ids), 4, labels = FALSE))[[4]]
+l_ids <- split(vec_ids, cut(seq_along(vec_ids), 8, labels = FALSE))
+
+plan(multisession(workers = 4))
+system.time(out1 <- dat[id%in%l_ids[[1]]] %>% 
+              split(f=list(.$id,.$dc),
+                drop=T) %>%
+              future_map(~paf_dt(.x),
+                .progress = TRUE, 
+                .options = furrr_options(seed=333L)) %>% 
+  rbindlist(idcol = 'dc') %>% 
+  .[,`:=`(dc = gsub('[0-9]+\\.','', dc))]
+)
+system.time(out2 <- dat[id%in%l_ids[[2]]] %>% 
+              split(f=list(.$id,.$dc),
+                drop=T) %>%
+              future_map(~paf_dt(.x),
+                .progress = TRUE, 
+                .options = furrr_options(seed=333L)) %>% 
+  rbindlist(idcol = 'dc') %>% 
+  .[,`:=`(dc = gsub('[0-9]+\\.','', dc))]
+)
+system.time(out3 <- dat[id%in%l_ids[[3]]] %>% 
+              split(f=list(.$id,.$dc),
+                drop=T) %>%
+              future_map(~paf_dt(.x),
+                .progress = TRUE, 
+                .options = furrr_options(seed=333L)) %>% 
+  rbindlist(idcol = 'dc') %>% 
+  .[,`:=`(dc = gsub('[0-9]+\\.','', dc))]
+)
+system.time(out4 <- dat[id%in%l_ids[[4]]] %>% 
+              split(f=list(.$id,.$dc),
+                drop=T) %>%
+              future_map(~paf_dt(.x),
+                .progress = TRUE, 
+                .options = furrr_options(seed=333L)) %>% 
+  rbindlist(idcol = 'dc') %>% 
+  .[,`:=`(dc = gsub('[0-9]+\\.','', dc))]
+)
+system.time(out5 <- dat[id%in%l_ids[[5]]] %>% 
+              split(f=list(.$id,.$dc),
+                drop=T) %>%
+              future_map(~paf_dt(.x),
+                .progress = TRUE, 
+                .options = furrr_options(seed=333L)) %>% 
+  rbindlist(idcol = 'dc') %>% 
+  .[,`:=`(dc = gsub('[0-9]+\\.','', dc))]
+)
+system.time(out6 <- dat[id%in%l_ids[[6]]] %>% 
+              split(f=list(.$id,.$dc),
+                drop=T) %>%
+              future_map(~paf_dt(.x),
+                .progress = TRUE, 
+                .options = furrr_options(seed=333L)) %>% 
+  rbindlist(idcol = 'dc') %>% 
+  .[,`:=`(dc = gsub('[0-9]+\\.','', dc))]
+)
+system.time(out7 <- dat[id%in%l_ids[[7]]] %>% 
+              split(f=list(.$id,.$dc),
+                drop=T) %>%
+              future_map(~paf_dt(.x),
+                .progress = TRUE, 
+                .options = furrr_options(seed=333L)) %>% 
+  rbindlist(idcol = 'dc') %>% 
+  .[,`:=`(dc = gsub('[0-9]+\\.','', dc))]
+)
+system.time(out8 <- dat[id%in%l_ids[[8]]] %>% 
+              split(f=list(.$id,.$dc),
+                drop=T) %>%
+              future_map(~paf_dt(.x),
+                .progress = TRUE, 
+                .options = furrr_options(seed=333L)) %>% 
+  rbindlist(idcol = 'dc') %>% 
+  .[,`:=`(dc = gsub('[0-9]+\\.','', dc))]
+)
+
+all_out <- rbindlist(list(out1,out2,out3,out4,out5,out6,out7,out8))
+arrow::write_parquet(all_out, sink=paste0("../data_general/proc_sif-optim/mod_fits/",
+  "lc-41-fits_",Sys.Date(),".parquet"),
+  compression = 'snappy')
+
+
+all_out %>% 
+  filter(term=='lst') %>% 
+  filter(p.value < 0.05) %>% 
+  ggplot(data=.,aes(xc,yc,fill=estimate,color=estimate))+
+  geom_point(size=0.5)+
+  scale_fill_gradient2()+
+  scale_color_gradient2(limits=c(-0.1,0.1),oob=scales::squish)+
+  labs(color='lst')+
+  coord_sf()+
+  theme_dark()+
+  facet_wrap(~dc,ncol = 1)
+
+all_out %>% 
+  filter(term=='Topt') %>% 
+  filter(p.value < 0.05) %>% 
+  ggplot(data=.,aes(xc,yc,fill=estimate,color=estimate))+
+  geom_point(size=0.5)+
+  scale_fill_viridis_c(option='B')+
+  scale_color_viridis_c(option='B')+
+  labs(color='Topt')+
+  coord_sf()+
+  facet_wrap(~dc,ncol = 1)
+
+all_out %>% 
+  filter(term=='Topt') %>% 
+  group_by(id) %>% 
+  mutate(val = (. %>% filter(dc=="drought") %>% pull(estimate))-
+      (. %>% filter(dc=="wet") %>% pull(estimate)))
+all_out %>% 
+  filter(term=='Topt') %>% 
+  filter(is.na(estimate)==F) %>% 
+  group_by(id) %>% 
+  filter(p.value < 0.05) %>% 
+  # filter(any(c("drought","wet") %in% dc)) %>% 
+  pivot_wider(
+    id_cols=id,
+    names_from = dc,
+    names_glue = "{dc}",
+    values_from = estimate
+    ) %>% 
+  filter(is.na(wet)==F & is.na(drought)==F) %>% 
+  mutate(val = drought - wet) %>% 
+  pull(val) %>% summary(100)
+
+
+
+all_out[term=='Topt']$estimate %>% summary
+all_out[term=='Topt'][estimate==max(estimate)]$p.value %>% hist
+all_out[term=='Topt']$p.value %>% hist
+
+bads <- all_out[term=='Topt'][p.value > 0.05]
+bads$dc %>% table
+bads_w <- bads[dc=='wet'][id%in%bads$id]
+bads_w
+all_out[id==6719][dc=='wet']
+paf_dt(dat[id==6719][dc=='wet'],iter=10)
+
+vec_bads_wet <- all_out[term=='Topt'][dc=='wet'][p.value > 0.05]$id %>% unique
+
+
+system.time(bad_wet <- dat[dc=='wet'][id%in%vec_bads_wet] %>% 
+              split(f=list(.$id,.$dc),
+                drop=T) %>%
+              future_map(~paf_dt(.x),
+                .progress = TRUE, 
+                .options = furrr_options(seed=333L)) %>% 
+  rbindlist(idcol = 'dc') %>% 
+  .[,`:=`(dc = gsub('[0-9]+\\.','', dc))]
+)
+
+bad_wet[term=='Topt']$estimate %>% summary
+bad_wet[term=='Topt']$p.value %>% hist
+
+
+
+dat[id==bads[2]] %>% ggplot(data=.,aes(lst,sif,color=dc))+
+  geom_point()+
+  geom_smooth()
+
+
+out1 <- .Last.value
+
+paf_dt(dat[id==nobs[nobs<100]$id[1]])
+dat[id%in%test_ids$id] %>% 
+              split(f=list(.$id,.$dc),drop=T) %>% 
+  lapply(., dim)
+
+
+out2 <- dat[id%in%test_ids$id] %>% 
+              split(f=list(.$id,.$dc),
+                drop=T) %>%
+              future_map(~paf_dt(.x),
+                .progress = TRUE, 
+                .options = furrr_options(seed=333L)) %>% 
+  rbindlist(idcol = 'dc') %>% 
+  .[,`:=`(dc = gsub('[0-9]+\\.','', dc))]
+
+
+gsub('[0-9]+\\.','', "15.wet")
+
+str_remove("10.wet","\\D")
+
+str_remove("10.wet","[\\d\\.]")
+rbindlist(out2,idcol='map_id')$map_id %>% str_remove(.,"\\d{4}.")
+
+out2 %>% future_map_dfr(~ as_tibble(.), .id=list('id','dc'))
+out2
+
+out1 %>% 
+  filter(term=='Topt') %>% 
+  ggplot(data=.,aes(xc,yc,color=estimate))+
+  geom_point()+
+  scale_color_viridis_c(option='B')+
+  labs(color='Topt')
+
+
+out1 %>% 
+  filter(term=='lst') %>% 
+  ggplot(data=.,aes(xc,yc,color=estimate))+
+  geom_point()+
+  scale_color_gradient2(mid = 'grey80')+
+  theme_linedraw()+
+  labs(color=expression(paste(beta~'LST ('~C,')')))
+
+merge(out1,test_ids) %>% 
+  as.data.table() %>% 
+  .[order(nobs)] %>% 
+  .[term=='kopt']
+
+merge(out1,test_ids) %>% 
+  as.data.table() %>% 
+  .[order(nobs)] %>% 
+  .[term=='lst']
+
+merge(out1,test_ids) %>% 
+  as.data.table() %>% 
+  .[term=='rsq'] %>% 
+  ggplot(data=.,aes(nobs,estimate))+
+  geom_point()
+# paf_dt(dat[id==vec1[2]],iter=10,force_pa = T)
+
+
+
+
+
 
 
 gc(full=TRUE)
