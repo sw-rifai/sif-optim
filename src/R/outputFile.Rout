@@ -1,0 +1,4 @@
+running
+  '/usr/lib/R/bin/R --no-echo --no-restore --no-save --no-restore --file=src/R/fit_max-sif-monthly_pa-lm_by-pdsi.R'
+
+Fatal error: cannot open file 'src/R/fit_max-sif-monthly_pa-lm_by-pdsi.R': No such file or directory
